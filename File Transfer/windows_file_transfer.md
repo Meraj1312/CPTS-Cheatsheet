@@ -1,4 +1,4 @@
-# Windows File Transfer — Copy/Paste Cheat Sheet
+# Windows File Transfer
 
 > Replace `<KALI-IP>`, `<PORT>`, `<FILE>`, and `<PATH>` with your values.
 
