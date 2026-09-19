@@ -1,4 +1,4 @@
-# Protected File Transfers — Copy/Paste Cheat Sheet
+# Protected File Transfers
 
 > Replace `<KEY>`, `<FILE>`, `<PATH>`, and `<IP>` with your values.
 
