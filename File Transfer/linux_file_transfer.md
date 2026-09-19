@@ -1,4 +1,4 @@
-# Linux File Transfer Cheat Sheet
+# Linux File Transfer
 
 > Lab/authorized testing. Replace `ATTACKER_IP`, paths, usernames, and filenames.
 
