@@ -449,7 +449,7 @@ Then access the redirected drive in the RDP session through:
 \\tsclient\
 ```
 
-### Linux
+## Living off the Land
 
 #### OpenSSL — Target → Attacker
 
