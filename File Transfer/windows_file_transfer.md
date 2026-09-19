@@ -458,8 +458,6 @@ Then access:
 
 ## Living off the Land
 
-### Windows
-
 #### `certreq.exe` — Target → Attacker
 
 ```bash
