@@ -1,6 +1,3 @@
-Here is the content formatted as a Markdown (`.md`) file:
-
-```markdown
 # Credential Hunting in Linux
 
 ## Core Concept
