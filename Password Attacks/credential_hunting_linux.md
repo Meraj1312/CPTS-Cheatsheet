@@ -616,4 +616,3 @@ Find API token
 
 > Don't guess credentials
 > when the system may already contain them.
-```
