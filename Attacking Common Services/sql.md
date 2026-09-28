@@ -82,6 +82,9 @@ Windows Auth        → Windows/AD account
 ```bash
 mysql -u <USER> -p<PASSWORD> -h <TARGET>
 ```
+```bash
+mysql -u <USER> -p<PASSWORD> -h <TARGET> --skip-ssl
+```
 
 Example:
 
