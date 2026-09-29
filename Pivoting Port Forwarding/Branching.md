@@ -1,4 +1,4 @@
-# Pivoting & Tunneling Cheatsheet (CPTS)
+# Pivoting & Tunneling Cheatsheet
 
 Covers DNS tunneling (dnscat2), SOCKS5 tunneling (Chisel), and ICMP tunneling (ptunnel-ng), with OPSEC/stealth notes for each.
 
