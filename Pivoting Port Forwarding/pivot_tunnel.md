@@ -157,7 +157,32 @@ with f.ThreadPoolExecutor(150) as e:
     list(e.map(chk, ips))
 "
 ```
+## Powershell script for Ping Sweep
+```powershell
+$ports = 22,80,445,3389
 
+foreach ($subnet in 5,6) {
+    foreach ($hostnum in 1..254) {
+        $ip = "172.16.$subnet.$hostnum"
+
+        foreach ($port in $ports) {
+            try {
+                $client = New-Object System.Net.Sockets.TcpClient
+                $result = $client.BeginConnect($ip, $port, $null, $null)
+
+                if ($result.AsyncWaitHandle.WaitOne(500) -and $client.Connected) {
+                    Write-Host "$ip`t$port"
+                }
+
+                $client.Close()
+            }
+            catch {
+                # Ignore connection failures
+            }
+        }
+    }
+}
+```
 **How it works:**
 - Sweeps a set of `/24`s (edit the `o in (5, 6)` tuple and the `172.16.` prefix for your target range) across a small, common-service port list (`22, 80, 445, 3389` — edit as needed).
 - Uses `socket.create_connection` (a real TCP connect, 1s timeout) per port — equivalent to `nmap -sT`, just handwritten.
