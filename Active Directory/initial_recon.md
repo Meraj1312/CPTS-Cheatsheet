@@ -1,4 +1,4 @@
-# CPTS Cheat Sheet — External Recon & Initial AD Enumeration
+# External Recon & Initial AD Enumeration
 
 > **Goal:** Build a target map quickly, validate scope, identify hosts/services/users, and find the first path to valid domain access.
 >
