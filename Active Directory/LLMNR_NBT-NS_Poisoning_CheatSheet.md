@@ -1,8 +1,5 @@
 # CPTS Cheat Sheet — LLMNR/NBT-NS Poisoning
 
-> **Use only on systems/networks you are explicitly authorized to test (e.g. HTB/lab or written pentest scope).**
->
-> **CPTS focus:** recognize the attack path, know the protocol/port relationships, run the core tooling, preserve evidence, and understand what a captured NetNTLM hash can/cannot do.
 
 ---
 
