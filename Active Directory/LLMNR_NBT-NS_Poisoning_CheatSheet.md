@@ -1,7 +1,7 @@
 # CPTS Cheat Sheet — LLMNR/NBT-NS Poisoning
 
 
----
+
 
 ## 1. Core Idea
 
