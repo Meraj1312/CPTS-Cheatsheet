@@ -1,4 +1,4 @@
-# Kerberoasting — from Windows | CPTS Cheat Sheet
+# Kerberoasting 
 
 ## 0. Core Idea
 
