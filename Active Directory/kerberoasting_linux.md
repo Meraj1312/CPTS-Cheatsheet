@@ -1,7 +1,6 @@
-# HTB — Kerberoasting from Linux
+# Kerberoasting from Linux
 
-> **Purpose:** CPTS-style revision sheet for Kerberoasting from a non-domain-joined Linux attack host.
->
+
 > **Core chain:** `Domain user access → enumerate SPNs → request TGS → save $krb5tgs$ hash → crack offline → validate credentials → enumerate/use resulting access`
 
 ---
