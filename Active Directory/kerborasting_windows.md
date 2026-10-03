@@ -1,4 +1,4 @@
-# Kerberoasting 
+# Kerberoasting from Windows
 
 ## 0. Core Idea
 
